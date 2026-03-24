@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SupliCRM — Publicar no GitHub</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a1020; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .card { background: #0f1828; border: 1px solid #1e3a5f; border-radius: 16px; padding: 32px; max-width: 520px; width: 100%; }
+  .logo { font-size: 40px; text-align: center; margin-bottom: 12px; }
+  h1 { text-align: center; font-size: 20px; color: #00e5a0; margin-bottom: 6px; }
+  .sub { text-align: center; font-size: 13px; color: #7a9bbf; margin-bottom: 28px; }
+  label { font-size: 12px; color: #7a9bbf; display: block; margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  input { width: 100%; background: #050810; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 13px; font-family: inherit; outline: none; margin-bottom: 16px; }
+  input:focus { border-color: #00e5a0; }
+  .btn { width: 100%; padding: 13px; background: #00e5a0; color: #000; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border: 1px solid #1e3a5f; color: #7a9bbf; margin-top: 8px; }
+  .status { margin-top: 16px; padding: 12px 16px; border-radius: 10px; font-size: 13px; display: none; line-height: 1.6; }
+  .status.ok  { background: rgba(0,229,160,.1); border: 1px solid rgba(0,229,160,.3); color: #00e5a0; }
+  .status.err { background: rgba(239,68,68,.1);  border: 1px solid rgba(239,68,68,.3);  color: #f87171; }
+  .status.inf { background: rgba(56,189,248,.1); border: 1px solid rgba(56,189,248,.3); color: #38bdf8; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #1e3a5f; font-size: 12px; color: #7a9bbf; }
+  .step .dot { width: 8px; height: 8px; border-radius: 50%; background: #1e3a5f; flex-shrink: 0; }
+  .step.done .dot { background: #00e5a0; }
+  .step.active .dot { background: #38bdf8; animation: pulse 1s infinite; }
+  .step.err .dot { background: #f87171; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .hint { font-size: 11px; color: #4a6a8f; margin-top: -10px; margin-bottom: 16px; line-height: 1.5; }
+  a { color: #00e5a0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🚀</div>
+  <h1>Publicar SupliCRM no GitHub</h1>
+  <p class="sub">Faz upload do arquivo index.html mesmo acima de 1MB</p>
+
+  <div id="step-token" class="step active">
+    <div class="dot"></div>
+    <span>Configurar token de acesso</span>
+  </div>
+  <div id="step-file" class="step">
+    <div class="dot"></div>
+    <span>Selecionar arquivo index.html</span>
+  </div>
+  <div id="step-upload" class="step">
+    <div class="dot"></div>
+    <span>Enviar para o GitHub</span>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <label>Token GitHub (ghp_... ou github_pat_...)</label>
+    <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    <div class="hint">
+      Gere em: <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a><br>
+      → Generate new token → Classic → marque <strong>repo</strong> → Generate
+    </div>
+
+    <label>Usuário GitHub</label>
+    <input type="text" id="usuario" value="topsuplementosofc" placeholder="seu-usuario">
+
+    <label>Repositório</label>
+    <input type="text" id="repo" value="Topsuplementosofc-CRM" placeholder="nome-do-repositorio">
+
+    <label>Arquivo no repositório</label>
+    <input type="text" id="caminho" value="index.html" placeholder="index.html">
+
+    <label>Selecionar arquivo <strong>index.html</strong> do computador</label>
+    <input type="file" id="arquivo" accept=".html" style="cursor:pointer">
+
+    <button class="btn" id="btn-upload" onclick="fazerUpload()" disabled>
+      🚀 Publicar no GitHub
+    </button>
+    <button class="btn btn-ghost" onclick="testarToken()">
+      🔑 Testar token
+    </button>
+  </div>
+
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+document.getElementById('arquivo').addEventListener('change', function() {
+  const f = this.files[0];
+  if (f) {
+    document.getElementById('btn-upload').disabled = false;
+    mostrarStatus('inf', '📄 Arquivo selecionado: ' + f.name + ' (' + (f.size/1024).toFixed(0) + ' KB)');
+    setStep('file', 'done');
+    setStep('upload', 'active');
+  }
+});
+
+function setStep(id, state) {
+  const el = document.getElementById('step-' + id);
+  if (!el) return;
+  el.className = 'step ' + state;
+}
+
+function mostrarStatus(tipo, msg) {
+  const el = document.getElementById('status');
+  el.className = 'status ' + tipo;
+  el.style.display = 'block';
+  el.innerHTML = msg;
+}
+
+async function testarToken() {
+  const token   = document.getElementById('token').value.trim();
+  const usuario = document.getElementById('usuario').value.trim();
+  if (!token || !usuario) { mostrarStatus('err', '❌ Preencha o token e o usuário'); return; }
+
+  mostrarStatus('inf', '⏳ Testando token...');
+  try {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': 'token ' + token }
+    });
+    const d = await r.json();
+    if (r.ok) {
+      mostrarStatus('ok', '✅ Token válido! Usuário: <strong>' + d.login + '</strong>');
+      setStep('token', 'done');
+      setStep('file', 'active');
+    } else {
+      mostrarStatus('err', '❌ Token inválido: ' + (d.message || 'Erro ' + r.status));
+    }
+  } catch(e) {
+    mostrarStatus('err', '❌ Erro de conexão: ' + e.message);
+  }
+}
+
+async function fazerUpload() {
+  const token   = document.getElementById('token').value.trim();
+  const usuario = document.getElementById('usuario').value.trim();
+  const repo    = document.getElementById('repo').value.trim();
+  const caminho = document.getElementById('caminho').value.trim() || 'index.html';
+  const arquivo = document.getElementById('arquivo').files[0];
+
+  if (!token || !usuario || !repo) { mostrarStatus('err', '❌ Preencha token, usuário e repositório.'); return; }
+  if (!arquivo) { mostrarStatus('err', '❌ Selecione o arquivo index.html.'); return; }
+
+  document.getElementById('btn-upload').disabled = true;
+
+  const headers = {
+    'Authorization': 'token ' + token,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github.v3+json'
+  };
+
+  try {
+    await uploadArquivo(arquivo, caminho);
+    const repoUrl = 'https://' + usuario + '.github.io/' + repo + '/';
+    mostrarStatus('ok', '🎉 Publicação concluída!<br><br>Acesse em: <a href="' + repoUrl + '" target="_blank">' + repoUrl + '</a><br><small>Pode levar 1-2 min para atualizar.</small>');
+  } catch(e) {
+    mostrarStatus('err', '❌ Erro: ' + e.message);
+  }
+  document.getElementById('btn-upload').disabled = false;
+}
+
+function lerArquivoBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      // Converter para base64 usando TextEncoder (suporta UTF-8)
+      const text = e.target.result;
+      const encoder = new TextEncoder();
+      const bytes = encoder.encode(text);
+      let binary = '';
+      bytes.forEach(b => binary += String.fromCharCode(b));
+      resolve(btoa(binary));
+    };
+    reader.onerror = reject;
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+</script>
+</body>
+</html>
