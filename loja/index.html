@@ -4234,6 +4234,54 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('✅ Top Suplementos v3 — 10 módulos carregados');
+
+   <script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  get
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDaopMvtQHbQZsrljkYV-OygAZk1L-NP8A",
+  authDomain: "top-suplementos-ofc-crm.firebaseapp.com",
+  databaseURL: "https://top-suplementos-ofc-crm-default-rtdb.firebaseio.com",
+  projectId: "top-suplementos-ofc-crm",
+  storageBucket: "top-suplementos-ofc-crm.firebasestorage.app",
+  messagingSenderId: "668106538703",
+  appId: "1:668106538703:web:d8174f147a453ae95481ba"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+
+async function carregarProdutos() {
+
+  const snapshot = await get(
+    ref(db, "produtos")
+  );
+
+  if (snapshot.exists()) {
+
+    console.log(snapshot.val());
+
+  } else {
+
+    console.log("Nenhum produto encontrado");
+
+  }
+
+}
+
+carregarProdutos();
+
 </script>
 
 
